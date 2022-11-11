@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat en NodeJs</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <style>
+        #content{
+            display: none;
+        }
+        #chatContent{
+            float: left;
+        }
+        #chat{
+            position: relative;
+            width: 100%;
+            float: left;
+            min-height: 300px;
+            height: 90%;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1>Chat en NodeJs</h1>
+        </div>
+        <div class="input-group" id="nickContainer" stype="width: 300px;text-align: center;margin: 0 auto;">
+            <input type="text" id="nickname" class="form-control input-lg" placeholder="Ingresa tu nombre de usuario">
+            <span class="input-group-btn">
+                <button class="btn btn-lg btn-primary" type="submit" id="setNick">OK</button>
+            </span>
+        </div>
+        <div class="alert fade in alert-danger alert-dismissable" data-dismiss="alert" id="login-error" style="display: none;">
+            <button type="button" class="close" id="closeAlert">X</button>
+            Ese nombre de usuario ya está en uso. Prueba con otro.
+        </div>
+        <div id="content" class="row" style="height: 70%;">
+            <div class="col-md-2"></div>
+            <div id="chatContent" class="col-md-6">
+                <div class="panel panel-success">
+                    <div class="panel-heading">
+                        CHAT
+                    </div>
+                    <div id="chat" class="panel-body"></div>
+                </div>
+                <div>
+                    <form id="sendMessage" class="input-group" style="text-align: center; margin: 0 auto;">
+                        <input type="text" id="message" class="form-control input-lg">
+                        <span class="input-group-btn">
+                            <button class="btn btn-lg btn-primary" type="submit">Send</button>
+                        </span>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        USERS
+                    </div>
+                    <div class="panel-body" id="users"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        jQuery(function($){
+            var socket = io.connect();
+            var $messageForm = $('#sendMessage');
+            var $message = $('#message');
+            var $chat = $('#chat');
+            var nickname = $('#nickname');
+            var setNick = $('#setNick');
+            var users = $('#users');
+            setNick.click(function(e){
+                e.preventDefault();
+                socket.emit('newUser', nickname.val(), function(data){
+                    if(data){
+                        $('#nickContainer').hide();
+                        $('#content').show();
+                    } else {
+                        $('#login-error').show();
+                    }
+                });
+            });
+            $messageForm.submit(function(e){
+                e.preventDefault();
+                if($message.val() != '')
+                    socket.emit('sendMessage', $message.val());
+                $message.val('');
+            });
+            socket.on('newMessage', function(data){
+                $chat.append(data.nick + ': ' + data.msg + "<br>");
+            });
+            socket.on('usernames', function(data){
+                var usernamesString = "";
+                for(var username in data){
+                    usernamesString += username + "<br>";
+                }
+                users.html(usernamesString);
+            });
+        });
+    </script>
+</body>
+</html>
